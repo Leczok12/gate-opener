@@ -11,6 +11,7 @@ router.get("/", (req, res) => {
   res.write("<h1>Hello from Express.js!</h1>");
   res.end();
 });
+
 router.get("/another", (req, res) =>
   res.status(200).json({ route: "req.originalUrl" })
 );
