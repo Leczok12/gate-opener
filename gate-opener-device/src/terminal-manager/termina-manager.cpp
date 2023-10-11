@@ -91,6 +91,10 @@ void TerminalManager::tick()
             {
                 _wifiManager.connectionInformation();
             }
+            else if (command == "LASTDATA")
+            {
+                _wifiManager.lastData();
+            }
             else if (command == "API")
             {
                 Serial.print("[= API =]\n");
@@ -129,6 +133,34 @@ void TerminalManager::tick()
                 _dataManager.reset();
             else
                 help("RESET");
+        }
+        else if (command == "TEST")
+        {
+            command = cut(input, 1);
+            if (command == "1")
+            {
+                command = cut(input, 2);
+                if (command == "TRUE")
+                    _wifiManager.sendVar(1, true, true);
+                else if (command == "FALSE")
+                    _wifiManager.sendVar(1, false, true);
+                else
+                    help("TEST");
+            }
+            else if (command == "2")
+            {
+                command = cut(input, 2);
+                if (command == "TRUE")
+                    _wifiManager.sendVar(2, true, true);
+                else if (command == "FALSE")
+                    _wifiManager.sendVar(2, false, true);
+                else
+                    help("TEST");
+            }
+            else
+            {
+                help("TEST");
+            }
         }
         else if (command == "RECONNECT")
             _wifiManager.connect();
@@ -214,10 +246,11 @@ SET
 )";
     const std::string GET = R"(
 GET
-    NETWORK - network inforamtion
-    API     - url to api      
-    SSL     - api ssl     
-    SSID    - network ssid
+    NETWORK  - network inforamtion
+    API      - url to api      
+    SSL      - api ssl     
+    SSID     - network ssid
+    LASTDATA - last fetched data
 )";
     const std::string RESTART = R"(
 RESTART
@@ -229,6 +262,9 @@ RESET
 )";
     const std::string RECONNECT = R"(
 RECONNECT - reconnect to network
+)";
+    const std::string TEST = R"(
+TEST <1 , 2> <false , true> - test api
 )";
 
     Serial.print("[= HELP =]\n\r");
@@ -242,4 +278,6 @@ RECONNECT - reconnect to network
         Serial.print(RESET.c_str());
     if (what == "" || what == "RECONNECT")
         Serial.print(RECONNECT.c_str());
+    if (what == "" || what == "TEST")
+        Serial.print(TEST.c_str());
 }

@@ -22,11 +22,14 @@ void loop()
                           dataManager.data["pass"].as<std::string>());
   TerminalManager terminalManager(wifiManager, dataManager);
   wifiManager.connect();
+  unsigned long oldTime = 0;
+  delay(2000);
   do
   {
     terminalManager.tick();
-    if (!terminalManager.isActive())
+    if (!terminalManager.isActive() && oldTime + 1000 < millis())
     {
+      oldTime = millis();
       wifiManager.tick();
     }
   } while (true);

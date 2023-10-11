@@ -16,7 +16,7 @@ public:
 
     void reset();
 
-    StaticJsonDocument<4096> data;
+    StaticJsonDocument<2048> data;
 
 private:
 };

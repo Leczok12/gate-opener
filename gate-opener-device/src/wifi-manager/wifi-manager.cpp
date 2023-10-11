@@ -5,7 +5,10 @@ WifiManager::WifiManager(std::string name, std::string api, std::string sslCerti
       sslCertificate(sslCertificate),
       ssid(ssid),
       pass(pass),
+      var1(false),
+      var2(false),
       connectionCount(0),
+      lastFetch(0),
       macAddres(""),
       ipV4Addres(""),
       ipV6Addres(""),
@@ -85,34 +88,74 @@ void WifiManager::_connect()
 
 void WifiManager::tick()
 {
-    if (WiFi.status() == WL_CONNECTED)
+    if ((WiFi.status() == WL_CONNECTED) && lastFetch + 5000 < millis())
     {
-        // HTTPClient http;
+        lastFetch = millis();
 
-        // http.begin(String(api.c_str()), sslCertificate.c_str()); // Specify the URL and certificate
-        // int httpCode = http.GET();                      // Make the request
+        http.begin(String(api.c_str()), sslCertificate.c_str());
 
-        // if (httpCode > 0)
-        // { // Check for the returning code
+        int httpCode = -1;
+        if (http.connected())
+            httpCode = http.GET();
 
-        //     String payload = http.getString();
-        //     Serial.println(httpCode);
-        //     Serial.println(payload);
-        // }
+        if (httpCode > 0)
+        {
+            deserializeJson(_lastData, http.getString().c_str());
+            if (!_lastData["var1"].isNull())
+                var1 = _lastData["var1"].as<bool>();
+            if (!_lastData["var2"].isNull())
+                var2 = _lastData["var2"].as<bool>();
+        }
 
-        // else
-        // {
-        //     Serial.println("Error on HTTP request");
-        // }
-
-        // http.end();
-        // delay(500);
+        else
+        {
+            Serial.print("Error on HTTP request code [");
+            Serial.print(httpCode);
+            Serial.print("]\n");
+        }
+        http.end();
     }
-    else
+    else if (WiFi.status() != WL_CONNECTED)
     {
         _connect();
     }
 };
+
+void WifiManager::sendVar(int n, bool v, bool p)
+{
+    if ((WiFi.status() == WL_CONNECTED))
+    {
+        http.begin(String(api.c_str()), sslCertificate.c_str());
+        http.addHeader("Content-Type", "application/json");
+        std::string msg;
+        if (n == 1)
+            var1 = false;
+        else if (n == 2)
+            var2 = false;
+        else
+            return;
+        msg = "{\"var" + std::to_string(n) + "\": " + (v ? "true" : "false") + "}";
+
+        uint8_t *payload = (uint8_t *)msg.c_str();
+
+        int httpCode = -1;
+        if (http.connected())
+            httpCode = http.POST(payload, msg.length());
+        http.end();
+
+        if (p)
+        {
+            if (httpCode == 200)
+                Serial.print("Request was sended\n");
+            else
+            {
+                Serial.print("Error on HTTP request code [");
+                Serial.print(httpCode);
+                Serial.print("]\n");
+            }
+        }
+    }
+}
 
 void WifiManager::connectionInformation()
 {
@@ -122,6 +165,13 @@ void WifiManager::connectionInformation()
     Serial.println(std::string("LOCAL IPv4 ADDRESS : " + ipV4Addres).c_str());
     Serial.println(std::string("LOCAL IPv6 ADDRESS : " + ipV6Addres).c_str());
     Serial.println(std::string("SUBNET MASK        : " + subnetMask).c_str());
+}
+
+void WifiManager::lastData()
+{
+    Serial.print("[= LAST DATA =]\n");
+    serializeJsonPretty(_lastData, Serial);
+    Serial.print("\n");
 }
 
 std::string WifiManager::_status(int status)
