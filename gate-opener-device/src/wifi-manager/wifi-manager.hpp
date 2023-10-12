@@ -3,6 +3,7 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
+constexpr int requestInterval = 5000;
 class WifiManager
 {
 public:
@@ -34,7 +35,6 @@ private:
     StaticJsonDocument<128> _lastData;
     void _connect();
     std::string _status(int status);
-    HTTPClient http;
 
     int connectionCount;
     unsigned long lastFetch;

@@ -30,7 +30,7 @@ void WifiManager::connect()
 }
 void WifiManager::_connect()
 {
-    if (connectionCount >= 3)
+    if (connectionCount >= 9999)
         return;
     //--[CONNECT TO NETWORK]--
     WiFi.disconnect();
@@ -43,7 +43,7 @@ void WifiManager::_connect()
 
     while (WiFi.status() != WL_CONNECTED)
     {
-        if (connectionCount >= 3)
+        if (connectionCount >= 9999)
             break;
 
         Serial.print(std::string("\nConnecting [" + ssid + "] ").c_str());
@@ -69,6 +69,7 @@ void WifiManager::_connect()
         connectionCount++;
     }
     Serial.print("\n");
+
     if (WiFi.status() == WL_CONNECTED)
     {
         connectionCount = 0;
@@ -84,19 +85,22 @@ void WifiManager::_connect()
     {
         Serial.print(std::string("Connection failed! [" + _status(WiFi.status()) + "]\n").c_str());
     }
+
+    Serial.print("Timeout 5s\n");
+    delay(5000);
 };
 
 void WifiManager::tick()
 {
-    if ((WiFi.status() == WL_CONNECTED) && lastFetch + 5000 < millis())
+    if ((WiFi.status() == WL_CONNECTED) && lastFetch + requestInterval < millis())
     {
         lastFetch = millis();
 
-        http.begin(String(api.c_str()), sslCertificate.c_str());
+        HTTPClient http;
 
-        int httpCode = -1;
-        if (http.connected())
-            httpCode = http.GET();
+        http.begin(String(api.c_str()).c_str());
+
+        int httpCode = http.GET();
 
         if (httpCode > 0)
         {
@@ -123,36 +127,45 @@ void WifiManager::tick()
 
 void WifiManager::sendVar(int n, bool v, bool p)
 {
-    if ((WiFi.status() == WL_CONNECTED))
+    while (true)
     {
-        http.begin(String(api.c_str()), sslCertificate.c_str());
-        http.addHeader("Content-Type", "application/json");
-        std::string msg;
-        if (n == 1)
-            var1 = false;
-        else if (n == 2)
-            var2 = false;
-        else
-            return;
-        msg = "{\"var" + std::to_string(n) + "\": " + (v ? "true" : "false") + "}";
+        if (Serial.available())
+            if (Serial.read() == 24) // ctr + x
+                break;
 
-        uint8_t *payload = (uint8_t *)msg.c_str();
-
-        int httpCode = -1;
-        if (http.connected())
-            httpCode = http.POST(payload, msg.length());
-        http.end();
-
-        if (p)
+        if ((WiFi.status() == WL_CONNECTED) && lastFetch + requestInterval < millis())
         {
-            if (httpCode == 200)
-                Serial.print("Request was sended\n");
+            lastFetch = millis();
+
+            std::string msg;
+            if (n == 1)
+                var1 = false;
+            else if (n == 2)
+                var2 = false;
             else
+                return;
+            msg = "{\"var" + std::to_string(n) + "\": " + (v ? "true" : "false") + "}";
+
+            uint8_t *payload = (uint8_t *)msg.c_str();
+            HTTPClient http;
+            http.begin(String(api.c_str()), sslCertificate.c_str());
+            http.addHeader("Content-Type", "application/json");
+
+            // THERE ERROR
+            int httpCode = http.POST(payload, msg.length());
+            http.end();
+            if (p)
             {
-                Serial.print("Error on HTTP request code [");
-                Serial.print(httpCode);
-                Serial.print("]\n");
+                if (httpCode == 200)
+                    Serial.print("Request was sended\n");
+                else
+                {
+                    Serial.print("Error on HTTP request code [");
+                    Serial.print(httpCode);
+                    Serial.print("]\n");
+                }
             }
+            break;
         }
     }
 }
@@ -193,4 +206,5 @@ std::string WifiManager::_status(int status)
     case WL_DISCONNECTED:
         return "WL_DISCONNECTED";
     }
+    return "UNKNOW";
 }
