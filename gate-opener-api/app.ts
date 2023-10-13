@@ -1,4 +1,4 @@
-import express, { Express, Request, Response } from "express";
+import express, { Request, Response } from "express";
 import expressWs from "express-ws";
 import { WebSocket as WebSocket_ } from "ws";
 import dotenv from "dotenv";
@@ -8,6 +8,15 @@ dotenv.config();
 const _expressWs = expressWs(express());
 const app = _expressWs.app;
 const port = process.env.PORT;
+
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  next();
+});
 
 app.get("/", (req: Request, res: Response) => {
   res.send(`
@@ -54,7 +63,6 @@ function getIndex(id: string): number {
 app.ws("/ws/:id", (ws, req) => {
   const id = req.params.id;
   if (id.length === 64) {
-    const dd = ws;
     const index = getIndex(id);
 
     data[index].clients.push(ws);
@@ -74,7 +82,6 @@ app.ws("/ws/:id", (ws, req) => {
     });
 
     ws.on("close", () => {
-      console.log("sdfg");
       data[index].clients.splice(
         data[index].clients.findIndex((e) => e === ws ?? true),
         1

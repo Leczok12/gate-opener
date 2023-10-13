@@ -2,7 +2,7 @@
 #include "WebSocketClient.h"
 #include <WiFi.h>
 
-WebSocketClient ws(false);
+WebSocketClient ws(true);
 
 void setup()
 {
@@ -21,17 +21,19 @@ void loop()
 {
   if (!ws.isConnected())
   {
-    ws.connect("192.168.137.1", "/", 5000);
+    Serial.println("not");
+    ws.connect("gate-opener-api.onrender.com", "/ws/XfwgEAtMZDx1VpfxxITwLT9JHptdmnStDNiOdxgdF26Q3IQvOKOcXrBtpboHuKQI", 443);
   }
   else
   {
-    ws.send("hello");
+    // ws.send("hello");
 
     String msg;
     if (ws.getMessage(msg))
     {
       Serial.println(msg);
     }
+    Serial.println("tot");
   }
   delay(500);
 }

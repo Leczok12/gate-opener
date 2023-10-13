@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:getwidget/components/loader/gf_loader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -14,15 +15,17 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
+  late WebSocketChannel ws;
+
   String _key = "";
+  bool _connected = false;
   bool var1 = false;
   bool var2 = false;
 
-  void _errorApiMsg() {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      duration: Duration(seconds: 3),
-      content: Center(
-          child: Text("Błąd podczas wysyłana lub przyjmowania wiadomości")),
+  void _errorMsg(msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      duration: const Duration(seconds: 5),
+      content: Center(child: Text(msg)),
     ));
   }
 
@@ -36,129 +39,103 @@ class _HomeState extends State<Home> {
   Future<void> _saveKey() async {
     final SharedPreferences prefs = await _prefs;
     prefs.setString("key", _key);
+    _connectWs();
   }
 
-  Future<bool> _getRequest() async {
-    if (_key == "") {
-      return false;
+  Future<void> _connectWs({bool close = true}) async {
+    setState(() => _connected = false);
+    if (close) {
+      ws.sink.close();
     }
-
-    final uri = Uri.parse("https://gate-opener-api.onrender.com/api/$_key");
-    final response = await http.get(uri);
-
-    if (response.statusCode == 200) {
-      setState(() {
-        var1 = json.decode(response.body)["var1"];
-        var2 = json.decode(response.body)["var2"];
-      });
-      return true;
-    }
-    return false;
+    ws = WebSocketChannel.connect(
+        Uri.parse('ws://gate-opener-api.onrender.com/ws/$_key'));
+    await ws.ready;
+    ws.stream.listen((msg) {
+      try {
+        setState(() => var1 = json.decode(msg)["var1"]);
+        setState(() => var2 = json.decode(msg)["var2"]);
+      } catch (e) {
+        _errorMsg("Bład strumienia");
+      }
+    }, onError: (msg) {
+      _errorMsg(msg);
+    });
+    setState(() => _connected = true);
   }
-
-  Future<bool> _postRequest(int n, bool v) async {
-    if (_key == "") {
-      return false;
-    }
-    Map<String, dynamic> req = n == 1 ? {'var1': v} : {'var2': v};
-    Map<String, String> headers = {
-      'Content-type': 'application/json',
-    };
-    final uri = Uri.parse("https://gate-opener-api.onrender.com/api/$_key");
-    final response =
-        await http.post(uri, headers: headers, body: json.encode(req));
-
-    if (response.statusCode == 200) {
-      setState(() {
-        if (n == 1) {
-          var1 = v;
-        } else {
-          var2 = v;
-        }
-      });
-      return true;
-    }
-    return false;
-  }
-
-  late Timer apiRequest;
 
   @override
   void dispose() {
-    apiRequest.cancel();
+    ws.sink.close();
     super.dispose();
   }
 
   @override
   void initState() {
-    _getKey();
-    apiRequest = Timer.periodic(const Duration(seconds: 5), (timer) async {
-      if (apiRequest.isActive && _key != "") {
-        _getRequest().then((value) {
-          if (!value) {
-            _errorApiMsg();
-          }
-        });
-      }
-    });
+    () async {
+      await _getKey();
+      _connectWs(close: false);
+    }();
+
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: SizedBox(
-                    width: 120,
-                    height: 90,
-                    child: ElevatedButton(
-                        style: const ButtonStyle(
-                            shape: MaterialStatePropertyAll(
-                                RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.all(
-                                        Radius.circular(15))))),
-                        onPressed: var1
-                            ? null
-                            : () => _postRequest(1, true).then((value) {
-                                  if (!value) {
-                                    _errorApiMsg();
-                                  }
-                                }),
-                        child: const Text("⚪"))),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: SizedBox(
-                    width: 120,
-                    height: 90,
-                    child: ElevatedButton(
-                        style: const ButtonStyle(
-                            shape: MaterialStatePropertyAll(
-                                RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.all(
-                                        Radius.circular(15))))),
-                        onPressed: var2
-                            ? null
-                            : () => _postRequest(2, true).then((value) {
-                                  if (!value) {
-                                    _errorApiMsg();
-                                  }
-                                }),
-                        child: const Text("⚪ ⚪"))),
-              ),
-            ]),
-      ),
+      body: _connected
+          ? Center(
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: SizedBox(
+                        width: 180,
+                        height: 140,
+                        child: ElevatedButton(
+                            style: const ButtonStyle(
+                                shape: MaterialStatePropertyAll(
+                                    RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(15))))),
+                            onPressed: var1
+                                ? null
+                                : () => {ws.sink.add('{"var1":true}')},
+                            child: const Text(
+                              "⚪",
+                              style: TextStyle(fontSize: 25),
+                            ))),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: SizedBox(
+                        width: 180,
+                        height: 140,
+                        child: ElevatedButton(
+                            style: const ButtonStyle(
+                                shape: MaterialStatePropertyAll(
+                                    RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(15))))),
+                            onPressed: var2
+                                ? null
+                                : () => {ws.sink.add('{"var2":true}')},
+                            child: const Text(
+                              "⚪ ⚪",
+                              style: TextStyle(fontSize: 25),
+                            ))),
+                  ),
+                ]))
+          : const GFLoader(
+              loaderstrokeWidth: 8,
+              size: 80,
+            ),
       floatingActionButton: IconButton(
         onPressed: () => showDialog(
             context: context,
             builder: (context) {
-              String input = "";
+              String input = _key;
 
               return Dialog(
                 child: Padding(
@@ -167,7 +144,8 @@ class _HomeState extends State<Home> {
                       mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        TextField(
+                        TextFormField(
+                          initialValue: input,
                           maxLength: 64,
                           maxLines: 1,
                           onChanged: (value) => input = value,
@@ -186,18 +164,8 @@ class _HomeState extends State<Home> {
                               SizedBox(
                                 width: 150,
                                 child: ElevatedButton(
-                                    onPressed: () {
-                                      _postRequest(1, false).then((value) {
-                                        if (!value) {
-                                          _errorApiMsg();
-                                        }
-                                      });
-                                      _postRequest(2, false).then((value) {
-                                        if (!value) {
-                                          _errorApiMsg();
-                                        }
-                                      });
-                                    },
+                                    onPressed: () => ws.sink
+                                        .add('{"var1":false,"var2":false}'),
                                     child: const Text("Reset Api")),
                               ),
                               SizedBox(
