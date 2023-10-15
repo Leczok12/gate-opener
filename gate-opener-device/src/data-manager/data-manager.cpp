@@ -40,8 +40,9 @@ bool DataManager::read()
     file.close();
 
     if (
-        data["ssl"].isNull() ||
-        data["api"].isNull() ||
+        data["domain"].isNull() ||
+        data["port"].isNull() ||
+        data["path"].isNull() ||
         data["ssid"].isNull() ||
         data["pass"].isNull())
     {

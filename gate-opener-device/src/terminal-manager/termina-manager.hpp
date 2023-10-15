@@ -1,21 +1,30 @@
 #pragma once
 #include <Arduino.h>
-#include "../wifi-manager/wifi-manager.hpp"
+#include <WiFi.h>
 #include "../data-manager/data-manager.hpp"
+
+enum TERMINAL_ACTION
+{
+    NONE,
+    RECONNECT,
+    GET_LAST_DATA,
+    TEST_1_TRUE,
+    TEST_1_FALSE,
+    TEST_2_TRUE,
+    TEST_2_FALSE,
+};
 
 class TerminalManager
 {
 public:
-    TerminalManager(
-        WifiManager &wifiManager,
-        DataManager &dataManager);
+    TerminalManager(DataManager &dataManager);
     ~TerminalManager();
 
     bool isActive();
-    void tick();
+    TERMINAL_ACTION loop();
+    TERMINAL_ACTION command(std::string);
 
 private:
-    WifiManager &_wifiManager;
     DataManager &_dataManager;
     std::string input;
     bool endInput;
