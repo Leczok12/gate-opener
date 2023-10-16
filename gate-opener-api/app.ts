@@ -19,6 +19,7 @@ app.use((req, res, next) => {
 });
 
 app.get("/", (req: Request, res: Response) => {
+  console.log(req.get("host"));
   res.send(`
   <html>
     <head>
@@ -27,7 +28,9 @@ app.get("/", (req: Request, res: Response) => {
     <body style="background-color: #000; padding: 0; margin: 0; font-family: Consolas, Arial; display: flex;">
         <div style="height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; color:#fff; flex-direction: column;">
             <h1>GATE-OPENER-API</h1>
-            <p>generate a 64 chars string from <a href="https://miniwebtool.com/pl/random-string-generator/" target="_blank">there</a> and go to api/[string]</p>
+            <p>generate a 64 chars string from <a href="https://miniwebtool.com/pl/random-string-generator/" target="_blank">there</a> and your socket is available on ws://${req.get(
+              "host"
+            )}/ws/[string]</p>
         </div>
     
     </body>

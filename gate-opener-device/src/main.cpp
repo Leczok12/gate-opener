@@ -9,6 +9,8 @@
 
 WebSocketsClient ws;
 
+unsigned long oldTimeLedConnected = 0;
+unsigned long oldTimeLedWorking = 0;
 int connectionCount = 0;
 StaticJsonDocument<128> lastData;
 
@@ -51,7 +53,7 @@ void _wsEvent(WStype_t type, uint8_t *payload, size_t length)
 
 void _connect(DataManager &dataManager, TerminalManager &terminalManager, bool force = false)
 {
-    if (connectionCount >= 9999)
+    if (connectionCount >= MAX_CONNECTION_COUNT)
         return;
 
     if (force)
@@ -61,22 +63,22 @@ void _connect(DataManager &dataManager, TerminalManager &terminalManager, bool f
         delay(200);
     }
 
-    if (WiFi.status() != WL_CONNECTED && connectionCount < 9999)
+    if (WiFi.status() != WL_CONNECTED && connectionCount < MAX_CONNECTION_COUNT)
     {
-        while (WiFi.status() != WL_CONNECTED && connectionCount < 9999)
+        while (WiFi.status() != WL_CONNECTED && connectionCount < MAX_CONNECTION_COUNT)
         {
             WiFi.begin(dataManager.data["ssid"].as<std::string>().c_str(),
                        dataManager.data["pass"].as<std::string>().c_str());
 
             Serial.print(std::string("Connecting [" + dataManager.data["ssid"].as<std::string>() + "] => ").c_str());
             unsigned long oldTime = millis();
-            while (WiFi.status() != WL_CONNECTED && connectionCount < 9999)
+            while (WiFi.status() != WL_CONNECTED && connectionCount < MAX_CONNECTION_COUNT)
             {
                 if (oldTime + 5000 < millis())
                     break;
 
                 if (Serial.available() && Serial.read() == 24) // ctr + x
-                    connectionCount = 9999;
+                    connectionCount = MAX_CONNECTION_COUNT;
 
                 Serial.print(".");
                 delay(200);
@@ -87,9 +89,9 @@ void _connect(DataManager &dataManager, TerminalManager &terminalManager, bool f
         if (WiFi.status() == WL_CONNECTED)
             terminalManager.command("GET NETWORK");
     }
-    if (!ws.isConnected() && connectionCount < 9999)
+    if (!ws.isConnected() && connectionCount < MAX_CONNECTION_COUNT)
     {
-        while (!ws.isConnected() && connectionCount < 9999)
+        while (!ws.isConnected() && connectionCount < MAX_CONNECTION_COUNT)
         {
             ws.disconnect();
             ws = WebSocketsClient();
@@ -99,13 +101,13 @@ void _connect(DataManager &dataManager, TerminalManager &terminalManager, bool f
                         dataManager.data["path"].as<std::string>().c_str());
             Serial.print(std::string("Connecting [" + dataManager.data["domain"].as<std::string>() + "] => ").c_str());
             unsigned long oldTime = millis();
-            while (!ws.isConnected() && connectionCount < 9999)
+            while (!ws.isConnected() && connectionCount < MAX_CONNECTION_COUNT)
             {
                 if (oldTime + 5000 < millis())
                     break;
 
                 if (Serial.available() && Serial.read() == 24) // ctr + x
-                    connectionCount = 9999;
+                    connectionCount = MAX_CONNECTION_COUNT;
 
                 Serial.print(".");
                 ws.loop();
@@ -115,6 +117,7 @@ void _connect(DataManager &dataManager, TerminalManager &terminalManager, bool f
             connectionCount++;
         }
     }
+    connectionCount = 0;
 }
 
 void setup()
@@ -122,6 +125,12 @@ void setup()
     Serial.begin(115200);
 
     delay(1000);
+
+    pinMode(PIN_LED_CONNECTED, OUTPUT);
+    digitalWrite(PIN_LED_CONNECTED, LOW);
+    pinMode(PIN_LED_WORKING, OUTPUT);
+    digitalWrite(PIN_LED_WORKING, LOW);
+
     Serial.print(std::string("\n" + std::string(NAME) + " [" + std::string(VERSION) + "]\n").c_str());
     WiFi.setHostname(std::string(std::string(NAME) + std::string(VERSION)).c_str());
     WiFi.setAutoConnect(false);
@@ -164,19 +173,50 @@ void loop()
         if (!terminalManager.isActive())
         {
             ws.loop();
+
             if (var1)
             {
-                delay(2000);
+                int x = 0;
+                digitalWrite(PIN_LED_CONNECTED, LOW);
+                while (x < 20)
+                {
+                    if (oldTimeLedWorking + BLINK_WORKING_INTERWAL < millis())
+                    {
+                        oldTimeLedWorking = millis();
+                        digitalWrite(PIN_LED_WORKING, !digitalRead(PIN_LED_WORKING));
+                        x++;
+                    }
+                }
                 ws.sendTXT(R"({"var1":false})");
             }
             if (var2)
             {
-                delay(2000);
+                int x = 0;
+                digitalWrite(PIN_LED_CONNECTED, LOW);
+                while (x < 20)
+                {
+                    if (oldTimeLedWorking + BLINK_WORKING_INTERWAL < millis())
+                    {
+                        oldTimeLedWorking = millis();
+                        digitalWrite(PIN_LED_WORKING, !digitalRead(PIN_LED_WORKING));
+                        x++;
+                    }
+                }
                 ws.sendTXT(R"({"var2":false})");
+            }
+            digitalWrite(PIN_LED_WORKING, LOW);
+
+            if (oldTimeLedConnected + BLINK_CONNECTED_INTERWAL < millis())
+            {
+                oldTimeLedConnected = millis();
+                digitalWrite(PIN_LED_CONNECTED, !digitalRead(PIN_LED_CONNECTED));
             }
 
             if (WiFi.status() != WL_CONNECTED || !ws.isConnected())
+            {
+                digitalWrite(PIN_LED_CONNECTED, LOW);
                 _connect(dataManager, terminalManager);
+            }
         }
     }
 }
