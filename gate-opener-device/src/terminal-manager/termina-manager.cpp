@@ -92,6 +92,11 @@ TERMINAL_ACTION TerminalManager::command(std::string _command)
             _dataManager.data["pass"] = cut(_command, 2, false);
             Serial.print(_dataManager.save() ? "- saved\n" : "- not saved\n");
         }
+        else if (command == "SERVO_TILT")
+        {
+            _dataManager.data["servo_tilt"] = std::atoi(cut(_command, 2, false).c_str());
+            Serial.print(_dataManager.save() ? "- saved\n" : "- not saved\n");
+        }
         else
         {
             help("SET");
@@ -135,6 +140,12 @@ TERMINAL_ACTION TerminalManager::command(std::string _command)
         {
             Serial.print("[= SSID =]\n");
             Serial.print(_dataManager.data["ssid"].as<std::string>().c_str());
+            Serial.print("\n");
+        }
+        else if (command == "SERVO_TILT")
+        {
+            Serial.print("[= SERVO TILT =]\n");
+            Serial.print(_dataManager.data["servo_tilt"].as<std::string>().c_str());
             Serial.print("\n");
         }
         else
@@ -262,20 +273,22 @@ void TerminalManager::help(std::string what)
 {
     const std::string SET = R"(
 SET
-    DOMAIN <value> - domain      
-    PORT   <value> - domain port     
-    PATH           - path with key    
-    SSID   <value> - network ssid
-    PASS   <value> - network password      
+    DOMAIN <value>      - domain      
+    PORT   <value>      - domain port     
+    PATH                - path with key    
+    SSID   <value>      - network ssid
+    PASS   <value>      - network password    
+    SERVO_TILT <value>  - servo tilt  
 )";
     const std::string GET = R"(
 GET
-    NETWORK  - network inforamtion
-    DOMAIN   - domain      
-    PORT     - domain port     
-    KEY      - domain key     
-    SSID     - network ssid
-    LASTDATA - last fetched data
+    NETWORK     - network inforamtion
+    DOMAIN      - domain      
+    PORT        - domain port     
+    KEY         - domain key     
+    SSID        - network ssid
+    LASTDATA    - last fetched data
+    SERVO_TILT  - servo tilt
 )";
     const std::string RESTART = R"(
 RESTART

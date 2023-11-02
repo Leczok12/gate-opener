@@ -5,5 +5,6 @@ const std::string PRIMARY_DATA = R"({
     "port":0,
     "path":"",
     "ssid":"",
-    "pass":""
+    "pass":"",
+    "servo_tilt": 0
 })";

@@ -3,11 +3,13 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebSocketsClient.h>
+#include <ESP32Servo.h>
 
 #include "data-manager/data-manager.hpp"
 #include "terminal-manager/termina-manager.hpp"
 
 WebSocketsClient ws;
+Servo servo;
 
 unsigned long oldTimeLedConnected = 0;
 unsigned long oldTimeLedWorking = 0;
@@ -126,6 +128,14 @@ void setup()
 
     delay(1000);
 
+    // ESP32PWM::allocateTimer(0);
+    // ESP32PWM::allocateTimer(1);
+    // ESP32PWM::allocateTimer(2);
+    // ESP32PWM::allocateTimer(3);
+    servo.setPeriodHertz(50);
+    servo.attach(PIN_SERVO_MOTOR, 500, 2400);
+    servo.write(90);
+
     pinMode(PIN_LED_CONNECTED, OUTPUT);
     digitalWrite(PIN_LED_CONNECTED, LOW);
     pinMode(PIN_LED_WORKING, OUTPUT);
@@ -176,32 +186,38 @@ void loop()
 
             if (var1)
             {
-                int x = 0;
+                unsigned long startTime = millis();
                 digitalWrite(PIN_LED_CONNECTED, LOW);
-                while (x < 20)
+                servo.write(90 - dataManager.data["servo_tilt"].as<int>());
+                while (startTime + 2000 > millis())
                 {
+                    ws.loop();
                     if (oldTimeLedWorking + BLINK_WORKING_INTERWAL < millis())
                     {
                         oldTimeLedWorking = millis();
                         digitalWrite(PIN_LED_WORKING, !digitalRead(PIN_LED_WORKING));
-                        x++;
                     }
                 }
+                servo.write(90);
+                var1 = false;
                 ws.sendTXT(R"({"var1":false})");
             }
             if (var2)
             {
-                int x = 0;
+                unsigned long startTime = millis();
                 digitalWrite(PIN_LED_CONNECTED, LOW);
-                while (x < 20)
+                servo.write(90 + dataManager.data["servo_tilt"].as<int>());
+                while (startTime + 2000 > millis())
                 {
+                    ws.loop();
                     if (oldTimeLedWorking + BLINK_WORKING_INTERWAL < millis())
                     {
                         oldTimeLedWorking = millis();
                         digitalWrite(PIN_LED_WORKING, !digitalRead(PIN_LED_WORKING));
-                        x++;
                     }
                 }
+                servo.write(90);
+                var2 = false;
                 ws.sendTXT(R"({"var2":false})");
             }
             digitalWrite(PIN_LED_WORKING, LOW);

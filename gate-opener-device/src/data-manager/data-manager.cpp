@@ -44,7 +44,8 @@ bool DataManager::read()
         data["port"].isNull() ||
         data["path"].isNull() ||
         data["ssid"].isNull() ||
-        data["pass"].isNull())
+        data["pass"].isNull() ||
+        data["servo_tilt"].isNull())
     {
         return false;
     }
