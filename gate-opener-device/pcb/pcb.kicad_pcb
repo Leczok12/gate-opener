@@ -268,7 +268,7 @@
       (net 31 "5v") (pinfunction "Pin_2") (pintype "passive") (tstamp 7888fb55-f417-47a6-886f-22d224257356))
     (pad "3" thru_hole oval (at 0 5.08) (size 1.7 1.7) (drill 1) (layers "*.Cu" "*.Mask")
       (net 34 "GND") (pinfunction "Pin_3") (pintype "passive") (tstamp 13bdc502-ab17-4e77-b1d5-83b0565e5aa6))
-    (model "${KICAD6_3DMODEL_DIR}/Connector_PinSocket_2.54mm.3dshapes/PinSocket_1x03_P2.54mm_Vertical.wrl"
+    (model "${KICAD7_3DMODEL_DIR}/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x03_P2.54mm_Vertical.wrl"
       (offset (xyz 0 0 0))
       (scale (xyz 1 1 1))
       (rotate (xyz 0 0 0))
@@ -354,7 +354,7 @@
       (net 2 "unconnected-(J1-Shield-Pad6)") (pinfunction "Shield") (pintype "passive+no_connect") (tstamp 5f0d4f0d-12dd-41f8-bead-f76f279ab35c))
     (pad "6" smd rect (at 3.8925 1.5675 90) (size 2.135 2.215) (layers "F.Cu" "F.Paste" "F.Mask")
       (net 2 "unconnected-(J1-Shield-Pad6)") (pinfunction "Shield") (pintype "passive+no_connect") (tstamp c55d736f-a8a5-4247-b8d1-31034f0b3927))
-    (model "${KICAD6_3DMODEL_DIR}/Connector_USB.3dshapes/USB_Micro-B_Amphenol_10103594-0001LF_Horizontal.wrl"
+    (model "${KICAD7_3DMODEL_DIR}/Connector_USB.3dshapes/USB_Micro-B_Molex_47346-0001.wrl"
       (offset (xyz 0 0 0))
       (scale (xyz 1 1 1))
       (rotate (xyz 0 0 0))
@@ -803,7 +803,7 @@
       (net 34 "GND") (pinfunction "GND") (pintype "passive") (tstamp 9157e2f1-8dd7-4c5b-93d4-dc8718d60aab))
     (pad "39" smd rect (at -0.1 0.87) (size 0.9 0.9) (layers "F.Cu" "F.Paste")
       (net 34 "GND") (pinfunction "GND") (pintype "passive") (tstamp 8768a74e-281e-4f4c-a742-bfddb13f548d))
-    (model "${KICAD6_3DMODEL_DIR}/RF_Module.3dshapes/ESP32-WROOM-32D.wrl"
+    (model "${KICAD7_3DMODEL_DIR}/RF_Module.3dshapes/ESP32-WROOM-32.step"
       (offset (xyz 0 0 0))
       (scale (xyz 1 1 1))
       (rotate (xyz 0 0 0))
