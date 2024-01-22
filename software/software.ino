@@ -81,12 +81,12 @@ void buttonCallback(unsigned long duration, int count){
   if(duration > 15000){
     Serial.printf("Reset to factory.\n");
     blink(INDEX_LED_POWER);
-    RMakerFactoryReset(2);
+    RMakerFactoryReset(0);
   }
   else if(duration > 5000){
     Serial.printf("Reset Wi-Fi.\n");
     blink(INDEX_LED_WIFI);
-    RMakerWiFiReset(2);
+    RMakerWiFiReset(0);
   }
   else if(count == 2){
     lock = !lock;
@@ -200,6 +200,7 @@ void loop() {
     else
       pixels.setPixelColor(INDEX_LED_WORKING, 0x0);
 
+    pixels.setBrightness(60);
     pixels.show();
     lastBlinkTime = millis();
     blinkOn = !blinkOn;
