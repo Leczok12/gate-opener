@@ -38,6 +38,7 @@ This device can open gate remotly using ESP RainMaker app or Google home.
 |      Resistor 100ohm       |   4    | -                                                               |
 | Momentary switch 3x4x2.5mm |   3    | -                                                               |
 |        AMS117 3.3V         |   1    | -                                                               |
+| JST_XH_2.54 2 pin sockets  |   2    | -                                                               |
 |       gate remote\*        |   1    | -                                                               |
 
 \* in my case it is **HORMANN HSM4-868**
